@@ -841,7 +841,7 @@ with col_hero:
 """, unsafe_allow_html=True)
 
     url_input = st.text_input(
-        "", placeholder="Enter website URL  (e.g. https://example.com)",
+        "Website URL", placeholder="Enter website URL  (e.g. https://example.com)",
         label_visibility="collapsed", key="url_input",
     )
     scan_btn  = st.button("🔍 Analyze Website", type="primary", use_container_width=True)
