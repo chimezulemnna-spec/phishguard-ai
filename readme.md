@@ -6,6 +6,9 @@ Built as a final year project at **Benson Idahosa University**, Department of Co
 
 ---
 
+## 🌐 Live Demo
+👉 [https://phishguard-ai-o7fipfmghfjcbtafsw7nvg.streamlit.app](https://phishguard-ai-o7fipfmghfjcbtafsw7nvg.streamlit.app)
+
 ## 🔍 Overview
 
 PhishGuard AI combines two ensemble models to detect phishing websites with over **99.85% accuracy**. It extracts 38 features from the URL structure and live webpage content, then runs them through trained machine learning models to produce an instant verdict.
