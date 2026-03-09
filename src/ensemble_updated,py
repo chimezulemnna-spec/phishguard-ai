@@ -1,0 +1,97 @@
+"""
+src/ensemble_updated.py
+════════════════════════
+Enhanced ensemble that can combine the URL+content voting model
+with the PILWD-trained models.
+
+FIX: Previous version called PhishingPredictor with wrong kwargs:
+       model_path=...        → should be ensemble_path=...
+       preprocessor_path=... → should be scaler_path=...
+     These are now corrected to match the PhishingPredictor.__init__ signature.
+"""
+
+import os
+import numpy as np
+import joblib
+
+
+class PhishingEnsemble:
+    """
+    Meta-ensemble that wraps one or more PhishingPredictor instances
+    and combines their probability scores via weighted averaging.
+    """
+
+    def __init__(self, use_existing=True, use_pilwd=True):
+        self.use_existing = use_existing
+        self.use_pilwd    = use_pilwd
+        self._predictors  = []   # list of (predictor, weight, name)
+
+        if use_existing:
+            try:
+                from src.predict_url import PhishingPredictor
+                p = PhishingPredictor(use_pilwd=False)   # URL+content model
+                self._predictors.append((p, 1.0, 'URL_Content'))
+                print("✅ Loaded URL+content voting ensemble")
+            except Exception as e:
+                print(f"⚠️  Could not load URL+content model: {e}")
+
+        if use_pilwd:
+            try:
+                from src.predict_url import PhishingPredictor
+                # FIX: use correct kwarg names
+                p = PhishingPredictor(use_pilwd=True)
+                self._predictors.append((p, 1.0, 'PILWD'))
+                print("✅ Loaded PILWD ensemble")
+            except Exception as e:
+                print(f"⚠️  Could not load PILWD ensemble: {e}")
+
+        if not self._predictors:
+            raise RuntimeError("No models could be loaded.")
+
+        # Normalise weights
+        total = sum(w for _, w, _ in self._predictors)
+        self._predictors = [(p, w / total, n) for p, w, n in self._predictors]
+
+    # ── predict from pre-computed feature dicts ───────────────────────────────
+    def predict_proba_from_features(self, features_dict: dict) -> float:
+        """
+        Weighted-average probability from all loaded predictors.
+        Each predictor uses its own feature set automatically.
+        """
+        proba = 0.0
+        for predictor, weight, _ in self._predictors:
+            result = predictor.predict_from_features(features_dict=features_dict)
+            proba += weight * result['probability']
+        return proba
+
+    # ── predict from raw URL ──────────────────────────────────────────────────
+    def predict_from_url(self, url: str) -> dict:
+        proba = 0.0
+        content_fetched = False
+        for predictor, weight, _ in self._predictors:
+            result = predictor.predict_from_url(url)
+            proba += weight * result['probability']
+            content_fetched = content_fetched or result.get('content_fetched', False)
+
+        pred = int(proba > 0.5)
+        return {
+            'url'           : url,
+            'probability'   : float(proba),
+            'prediction'    : 'phishing' if pred else 'legitimate',
+            'confidence'    : float(max(proba, 1 - proba)),
+            'is_phishing'   : bool(pred),
+            'content_fetched': content_fetched,
+        }
+
+    def predict(self, features_dict: dict, threshold=0.5) -> int:
+        return int(self.predict_proba_from_features(features_dict) > threshold)
+
+    def save(self, path='models/final_ensemble.pkl'):
+        config = {
+            'predictors': [(type(p).__name__, w, n)
+                           for p, w, n in self._predictors],
+            'use_pilwd'  : self.use_pilwd,
+            'use_existing': self.use_existing,
+        }
+        joblib.dump(config, path)
+        print(f"✅ Ensemble config saved to {path}")

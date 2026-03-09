@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# Secrets — NEVER commit these
+.streamlit/secrets.toml
+.env
+*.env
+
+# Dataset (too large for GitHub)
+dataset/
+
+# Unused model files
+models/smote_pilwd.pkl
+models/voting_ensemble_pilwd.pkl
+models/logistic_regression_pilwd.pkl
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,47 @@
+# check_project.py
+import os
+import sys
+
+print("="*60)
+print("Checking Phishing Detection Project Structure")
+print("="*60)
+
+# Check current directory
+print(f"\nCurrent directory: {os.getcwd()}")
+print(f"\nFiles in current directory:")
+for f in os.listdir('.'):
+    if os.path.isfile(f):
+        print(f"  📄 {f}")
+    else:
+        print(f"  📁 {f}/")
+
+# Check src directory
+if os.path.exists('src'):
+    print(f"\nFiles in src directory:")
+    for f in os.listdir('src'):
+        if f.endswith('.py'):
+            print(f"  📄 src/{f}")
+
+# Check models directory
+if os.path.exists('models'):
+    print(f"\nExisting models:")
+    for f in os.listdir('models'):
+        print(f"  📄 models/{f}")
+
+# Check dataset directory
+if os.path.exists('dataset'):
+    print(f"\nDatasets available:")
+    for f in os.listdir('dataset'):
+        print(f"  📄 dataset/{f}")
+
+# Check if PILWD_features.csv is in place
+pilwd_path = None
+possible_paths = ['PILWD_features.csv', 'dataset/PILWD_features.csv']
+for path in possible_paths:
+    if os.path.exists(path):
+        pilwd_path = path
+        print(f"\n✅ Found PILWD dataset at: {path}")
+        break
+
+if not pilwd_path:
+    print("\n❌ PILWD_features.csv not found. Please place it in the current directory or dataset/ folder")
