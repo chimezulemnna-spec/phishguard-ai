@@ -265,6 +265,24 @@ def get_ssl_info(url: str) -> dict:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  IP Address lookup
+# ══════════════════════════════════════════════════════════════════════════════
+def get_ip_info(url: str) -> dict:
+    """Resolves the domain to its IP address."""
+    try:
+        import socket
+        from urllib.parse import urlparse
+        hostname = urlparse(url).netloc.replace("www.", "").split(":")[0]
+        ip = socket.gethostbyname(hostname)
+        is_raw_ip = hostname == ip
+        return {"ip": ip, "is_raw_ip": is_raw_ip, "error": None}
+    except Exception as e:
+        return {"ip": "Unavailable", "is_raw_ip": False, "error": str(e)[:60]}
+
+
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  Google Safe Browsing API
 # ══════════════════════════════════════════════════════════════════════════════
 def check_safe_browsing(url: str) -> dict:
@@ -375,6 +393,7 @@ def analyze_url(url: str, models: dict, use_pilwd: bool = False) -> dict:
     whois_info = get_domain_age(url)
     ssl_info   = get_ssl_info(url)
     gsb_info   = check_safe_browsing(url)
+    ip_info    = get_ip_info(url)
     return {
         "prediction":      pred,
         "confidence":      float(max(proba)) * 100,
@@ -386,6 +405,7 @@ def analyze_url(url: str, models: dict, use_pilwd: bool = False) -> dict:
         "whois":           whois_info,
         "ssl":             ssl_info,
         "gsb":             gsb_info,
+        "ip":              ip_info,
     }
 
 
@@ -887,6 +907,7 @@ if scan_btn and url_input:
             status.update(label="🌐 Fetching webpage content…", state="running"); time.sleep(0.3)
             status.update(label="🔎 Looking up WHOIS data…",      state="running"); time.sleep(0.2)
             status.update(label="🔒 Checking SSL certificate…",  state="running"); time.sleep(0.2)
+            status.update(label="🌐 Resolving IP address…",       state="running"); time.sleep(0.2)
             status.update(label="🛡️ Checking Google Safe Browsing…", state="running"); time.sleep(0.2)
             status.update(label="🤖 Running ML models…",        state="running")
             result = analyze_url(url_input, models, use_pilwd=use_pilwd)
@@ -1140,6 +1161,21 @@ if scan_btn and url_input:
         </span>
       </span>
     </div>
+  </div>
+  <!-- IP Address row -->
+  <div style="margin-top:8px;padding:10px 14px;background:var(--bg-primary);
+       border-radius:10px;border:1px solid var(--border-color);">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="display:flex;align-items:center;gap:6px;
+                   color:var(--text-secondary);font-size:12px;text-transform:uppercase;letter-spacing:1px;">
+        <span style="font-size:15px;">🌐</span> IP Address
+      </span>
+      <span style="font-size:13px;font-weight:700;
+           color:{'#FF3D00' if result['ip']['is_raw_ip'] else '#00C853' if result['ip']['ip'] != 'Unavailable' else '#FFB300'};">
+        {result['ip']['ip']}
+      </span>
+    </div>
+    {f'<div style="margin-top:4px;font-size:12px;color:#FF3D00;font-weight:600;">⚠️ URL uses a raw IP address — highly suspicious</div>' if result['ip']['is_raw_ip'] else ""}
   </div>
 </div>
 """, unsafe_allow_html=True)
