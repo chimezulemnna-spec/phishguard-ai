@@ -413,6 +413,42 @@ def analyze_url(url: str, models: dict, use_pilwd: bool = False) -> dict:
 #  Load models + sidebar
 # ══════════════════════════════════════════════════════════════════════════════
 models = load_models()
+# ── ADD DIAGNOSTIC HERE ──────────────────────────────────────────────────────
+import os
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("🔧 Cloud Runtime Debug")
+
+st.sidebar.write(f"CWD: `{os.getcwd()}`")
+
+if os.path.exists("models"):
+    files = sorted(os.listdir("models"))
+    st.sidebar.write(f"**models/ directory:** {len(files)} files")
+    for f in files:
+        path = os.path.join("models", f)
+        if os.path.isfile(path):
+            size_mb = os.path.getsize(path) / (1024 * 1024)
+            st.sidebar.write(f"  • `{f}`: {size_mb:.1f} MB")
+else:
+    st.sidebar.error("❌ `models/` directory NOT FOUND")
+
+pilwd_path = "models/weighted_ensemble_pilwd.pkl"
+st.sidebar.write(f"**PILWD file exists:** {os.path.exists(pilwd_path)}")
+
+if os.path.exists(pilwd_path):
+    actual_size = os.path.getsize(pilwd_path) / (1024 * 1024)
+    st.sidebar.write(f"**PILWD size:** {actual_size:.1f} MB")
+else:
+    st.sidebar.error("❌ PILWD file missing on cloud!")
+
+st.sidebar.write(f"**_orig_ok:** {models.get('_orig_ok')}")
+st.sidebar.write(f"**_pilwd_ok:** {models.get('_pilwd_ok')}")
+
+if not models.get("_pilwd_ok"):
+    err = models.get('_pilwd_err', 'No error captured')
+    st.sidebar.error(f"**PILWD load error:**")
+    st.sidebar.code(err)
+# ── END DIAGNOSTIC ───────────────────────────────────────────────────────────
 
 # ── Scan history (session state) ──────────────────────────────────────────────
 if "scan_history" not in st.session_state:
